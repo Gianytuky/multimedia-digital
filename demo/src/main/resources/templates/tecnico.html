@@ -1,0 +1,196 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Técnico - MultiMedia Digital</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+
+<div class="d-flex">
+    <!-- BARRA LATERAL (SIDEBAR) -->
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <!-- CONTENIDO PRINCIPAL OPERATIVO -->
+    <main class="flex-grow-1 p-4 overflow-auto" style="height: 100vh;">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+                <h2 class="fw-bold mb-0 text-dark"><i class="bi bi-tools text-info me-2"></i>Panel Técnico Audiovisual</h2>
+                <small class="text-muted">Laboratorio: Cola de captura, duraciones reales, pesaje de GB y medio asignado.</small>
+            </div>
+            <a th:href="@{/tecnico}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refrescar Cola
+            </a>
+        </div>
+
+        <!-- ALERTA DE ÉXITO -->
+        <div th:if="${exitoMsg}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+            <span th:text="${exitoMsg}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- BARRA DE FILTROS DEL TÉCNICO -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-3">
+                <form th:action="@{/tecnico}" method="get" class="row g-2 align-items-center">
+                    <div class="col-md-3 col-12">
+                        <input type="text" name="criterio" class="form-control form-control-sm" th:value="${criterio}" placeholder="Buscar código, cliente, formato...">
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <select name="mantFiltro" class="form-select form-select-sm">
+                            <option value="">-- Mantenimiento: Todos --</option>
+                            <option value="true" th:selected="${mantFiltro == true}">Requiere Limpieza (Sí)</option>
+                            <option value="false" th:selected="${mantFiltro == false}">Sin Mantenimiento (No)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 col-6">
+                        <input type="date" name="fechaInicio" class="form-control form-control-sm" th:value="${fechaInicio}" title="Fecha Desde">
+                    </div>
+                    <div class="col-md-2 col-6">
+                        <input type="date" name="fechaFin" class="form-control form-control-sm" th:value="${fechaFin}" title="Fecha Hasta">
+                    </div>
+                    <div class="col-md-2 col-6 d-flex gap-1">
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1 fw-bold"><i class="bi bi-funnel"></i> Filtrar</button>
+                        <a th:href="@{/tecnico}" class="btn btn-outline-secondary btn-sm" title="Limpiar"><i class="bi bi-x-circle"></i></a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- TARJETAS DE MÉTRICAS -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4 col-12">
+                <div class="card bg-warning text-dark shadow-sm border-0 rounded-3 p-3">
+                    <span class="text-uppercase small fw-bold opacity-75">Total Cola Pendiente</span>
+                    <h3 class="fw-bold mb-0" th:text="${totalPendientes} + ' OTs'">0 OTs</h3>
+                </div>
+            </div>
+            <div class="col-md-4 col-12">
+                <div class="card bg-primary text-white shadow-sm border-0 rounded-3 p-3">
+                    <span class="text-uppercase small fw-bold opacity-75">Horas Capturadas</span>
+                    <h3 class="fw-bold mb-0" th:text="${totalHoras} + ' Hrs'">0.0 Hrs</h3>
+                </div>
+            </div>
+            <div class="col-md-4 col-12">
+                <div class="card bg-success text-white shadow-sm border-0 rounded-3 p-3">
+                    <span class="text-uppercase small fw-bold opacity-75">Espacio Procesado</span>
+                    <h3 class="fw-bold mb-0" th:text="${totalGB} + ' GB'">0.0 GB</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- COLA DE ESPERA -->
+            <div class="col-lg-7 col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-camera-video me-2"></i>Cola de Material Pendiente</span>
+                        <span class="badge bg-warning text-dark" th:text="${colaPendientes.size()} + ' visibles'"></span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover align-middle mb-0 text-center">
+                                <thead class="table-dark small">
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Ingreso</th>
+                                        <th>Cliente</th>
+                                        <th>Formato</th>
+                                        <th>Cant.</th>
+                                        <th>Mant.</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="p : ${colaPendientes}">
+                                        <td class="fw-bold text-primary" th:text="${p.codigoOT}"></td>
+                                        <td class="small text-muted" th:text="${#temporals.format(p.fechaRegistro, 'dd/MM/yyyy HH:mm')}"></td>
+                                        <td class="text-start" th:text="${p.cliente}"></td>
+                                        <td><span class="badge bg-light text-dark border" th:text="${p.formato}"></span></td>
+                                        <td th:text="${p.cantidad}"></td>
+                                        <td>
+                                            <span th:if="${p.mantenimiento}" class="badge bg-warning text-dark">Requiere</span>
+                                            <span th:unless="${p.mantenimiento}" class="badge bg-secondary">No</span>
+                                        </td>
+                                        <td>
+                                            <a th:href="@{/tecnico(codCaptura=${p.codigoOT})}" class="btn btn-primary btn-sm fw-bold">
+                                                <i class="bi bi-play-circle me-1"></i>Capturar
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${colaPendientes.isEmpty()}">
+                                        <td colspan="7" class="text-muted py-4">No se encontraron órdenes con los filtros seleccionados.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FORMULARIO DE CAPTURA TÉCNICA -->
+            <div class="col-lg-5 col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-info text-dark fw-bold">
+                        <i class="bi bi-sliders me-2"></i>Registrar Captura Técnica
+                    </div>
+                    <div class="card-body p-4">
+                        <div th:if="${otCaptura == null}" class="text-center text-muted py-4">
+                            <i class="bi bi-hand-index-thumb fs-1 d-block mb-2 text-info"></i>
+                            Selecciona una orden de la lista para registrar la captura.
+                        </div>
+
+                        <form th:if="${otCaptura != null}" th:action="@{/tecnico/captura}" method="post">
+                            <input type="hidden" name="codigoOT" th:value="${otCaptura.codigoOT}">
+
+                            <div class="p-3 bg-light rounded border mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="fw-bold">Código OT:</span>
+                                    <span class="badge bg-dark fs-6" th:text="${otCaptura.codigoOT}"></span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted">Cliente:</span>
+                                    <span class="fw-semibold" th:text="${otCaptura.cliente}"></span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Formato:</span>
+                                    <span class="badge bg-primary" th:text="${otCaptura.formato}"></span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Duración Real Capturada (Horas) *</label>
+                                <input type="number" step="0.1" min="0.1" name="horasReales" class="form-control" th:value="${otCaptura.horasReales > 0 ? otCaptura.horasReales : otCaptura.cantidad}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Espacio Generado (GB) *</label>
+                                <input type="number" step="0.1" min="0.1" name="pesoGB" class="form-control" th:value="${otCaptura.pesoGB > 0 ? otCaptura.pesoGB : 12.0}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Medio Asignado *</label>
+                                <select name="medioEntrega" class="form-select" required>
+                                    <option value="Memoria USB (32 GB)" th:selected="${otCaptura.medioEntrega == 'Memoria USB (32 GB)'}">Memoria USB (32 GB)</option>
+                                    <option value="Memoria USB (64 GB)" th:selected="${otCaptura.medioEntrega == 'Memoria USB (64 GB)'}">Memoria USB (64 GB)</option>
+                                    <option value="Disco Duro Externo (1 TB)" th:selected="${otCaptura.medioEntrega == 'Disco Duro Externo (1 TB)'}">Disco Duro Externo (1 TB)</option>
+                                    <option value="Enlace Nube (Google Drive / OneDrive)" th:selected="${otCaptura.medioEntrega == 'Enlace Nube'}">Enlace Nube (Google Drive / OneDrive)</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn btn-success w-100 fw-bold py-2"><i class="bi bi-check2-circle me-1"></i>Guardar y Finalizar Captura</button>
+                            <a th:href="@{/tecnico}" class="btn btn-outline-secondary w-100 btn-sm mt-2">Cancelar</a>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

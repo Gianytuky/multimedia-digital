@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/header :: head('Contacto y Consultas')}"></head>
+<body class="d-flex flex-column min-vh-100 bg-light">
+
+    <!-- NAVBAR COMÚN -->
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <main class="container my-4 flex-grow-1">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-12">
+
+                <!-- ALERTA DE CONFIRMACIÓN -->
+                <div th:if="${enviado}" class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                    <strong>¡Mensaje Enviado con Éxito!</strong> Hemos recibido tu consulta correctamente. Te responderemos a la brevedad.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
+
+                <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                    <div class="card-header bg-primary text-white text-center py-4">
+                        <i class="bi bi-envelope-paper-fill fs-1 mb-2 d-block"></i>
+                        <h3 class="fw-bold mb-0">Contáctanos</h3>
+                        <small class="opacity-75">Envíanos tus consultas sobre digitalización de cintas, audio o fotografías</small>
+                    </div>
+
+                    <div class="card-body p-4 p-md-5">
+                        <form th:action="@{/contacto}" method="post">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Nombre Completo *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                                    <input type="text" class="form-control" name="nombre" placeholder="Ej. Roberto Sánchez" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Correo Electrónico *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                                    <input type="email" class="form-control" name="email" placeholder="nombre@correo.com" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Teléfono de Contacto *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-telephone"></i></span>
+                                    <input type="tel" class="form-control" name="telefono" placeholder="Ej. 987654321" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small">Mensaje o Detalle del Material *</label>
+                                <textarea class="form-control" name="mensaje" rows="4" placeholder="Indica cantidad de cintas, formato, estado del material o dudas generales..." required></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm fs-5">
+                                <i class="bi bi-send-fill me-2"></i>Enviar Mensaje
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER COMÚN -->
+    <div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

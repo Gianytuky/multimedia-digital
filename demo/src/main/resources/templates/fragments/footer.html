@@ -1,0 +1,48 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<footer th:fragment="footer" class="bg-dark text-white py-3 border-top border-secondary mt-auto">
+    <!-- CONTENEDOR ANCHO ESTÁNDAR (IGUAL QUE EL HEADER Y EL MAIN) -->
+    <div class="container">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 text-nowrap">
+            
+            <!-- 1. EXTREMO IZQUIERDO: MARCA DEL NEGOCIO -->
+            <div class="d-flex align-items-center text-warning fw-bold fs-6">
+                <i class="bi bi-disc-fill me-2 fs-5"></i>
+                <span>MultiMedia Digital S.A.C.</span>
+            </div>
+
+            <!-- 2. CENTRO: CORREO ELECTRÓNICO INSTITUCIONAL -->
+            <div class="d-flex align-items-center small text-light">
+                <i class="bi bi-envelope-at-fill text-warning me-2 fs-6"></i>
+                <a href="mailto:GiancarloRivas@utp.edu.pe" class="text-light text-decoration-none fw-semibold">
+                    GiancarloRivas@utp.edu.pe
+                </a>
+            </div>
+
+            <!-- 3. CENTRO-DERECHA: TELÉFONO DE CONTACTO -->
+            <div class="d-flex align-items-center small text-light">
+                <i class="bi bi-telephone-fill text-warning me-2 fs-6"></i>
+                <span class="fw-semibold">+51 (01) 998-877-665</span>
+            </div>
+
+            <!-- 4. EXTREMO DERECHO: ICONOS SOCIALES (ALINEADOS CON EL BOTÓN INICIAR SESIÓN) -->
+            <div class="d-flex align-items-center gap-3 fs-5">
+                <span class="text-primary" style="cursor: pointer;" title="Facebook">
+                    <i class="bi bi-facebook"></i>
+                </span>
+                <span class="text-danger" style="cursor: pointer;" title="Instagram">
+                    <i class="bi bi-instagram"></i>
+                </span>
+                <span class="text-light" style="cursor: pointer;" title="TikTok">
+                    <i class="bi bi-tiktok"></i>
+                </span>
+            </div>
+
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

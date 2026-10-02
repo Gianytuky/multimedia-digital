@@ -1,0 +1,219 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de OTs - MultiMedia Digital</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+
+<div class="d-flex">
+    <!-- BARRA LATERAL (SIDEBAR) -->
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <!-- CONTENIDO PRINCIPAL OPERATIVO -->
+    <main class="flex-grow-1 p-4 overflow-auto" style="height: 100vh;">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+                <h2 class="fw-bold mb-0 text-dark"><i class="bi bi-folder-check text-primary me-2"></i>Gestión de Órdenes de Trabajo (OT)</h2>
+                <small class="text-muted">Módulo de recepción comercial: Registro inicial, filtros avanzados y seguimiento.</small>
+            </div>
+            <a th:href="@{/ordenes}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refrescar Listado
+            </a>
+        </div>
+
+        <!-- ALERTA DE BLOQUEO DE SEGURIDAD (RF-06) -->
+        <div th:if="${bloqueoMsg}" class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-lock-fill me-2 fs-5"></i>
+            <span th:text="${bloqueoMsg}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- BARRA DE FILTROS COMBINADOS CON FECHA -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-3">
+                <form th:action="@{/ordenes}" method="get" class="row g-2 align-items-center">
+                    <div class="col-md-2 col-12">
+                        <input type="text" name="criterio" class="form-control form-control-sm" th:value="${criterio}" placeholder="Cliente, código, tel...">
+                    </div>
+                    <div class="col-md-2 col-6">
+                        <select name="estadoFiltro" class="form-select form-select-sm">
+                            <option value="">-- Estado: Todos --</option>
+                            <option value="En Recepción" th:selected="${estadoFiltro == 'En Recepción'}">En Recepción</option>
+                            <option value="Por Notificar" th:selected="${estadoFiltro == 'Por Notificar'}">Por Notificar</option>
+                            <option value="Finalizado" th:selected="${estadoFiltro == 'Finalizado'}">Finalizado</option>
+                            <option value="Cancelado" th:selected="${estadoFiltro == 'Cancelado'}">Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 col-6">
+                        <select name="mantFiltro" class="form-select form-select-sm">
+                            <option value="">-- Mant.: Todos --</option>
+                            <option value="true" th:selected="${mantFiltro == true}">Con Mant. (Sí)</option>
+                            <option value="false" th:selected="${mantFiltro == false}">Sin Mant. (No)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- NUEVOS FILTROS DE FECHA -->
+                    <div class="col-md-2 col-6">
+                        <input type="date" name="fechaInicio" class="form-control form-control-sm" th:value="${fechaInicio}" title="Fecha Desde">
+                    </div>
+                    <div class="col-md-2 col-6">
+                        <input type="date" name="fechaFin" class="form-control form-control-sm" th:value="${fechaFin}" title="Fecha Hasta">
+                    </div>
+
+                    <div class="col-md-2 col-12 d-flex gap-1">
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1 fw-bold"><i class="bi bi-funnel"></i> Filtrar</button>
+                        <a th:href="@{/ordenes}" class="btn btn-outline-secondary btn-sm" title="Limpiar Filtros"><i class="bi bi-x-circle"></i></a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- FORMULARIO DE REGISTRO / EDICIÓN -->
+            <div class="col-lg-4 col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        <i class="bi me-2" th:classappend="${otEdit != null ? 'bi-pencil-square' : 'bi-plus-circle'}"></i>
+                        <span th:text="${otEdit != null ? 'Modificar OT (' + otEdit.codigoOT + ')' : 'Registrar Nueva OT'}"></span>
+                    </div>
+                    <div class="card-body p-3">
+                        <form th:action="${otEdit != null ? '/ordenes/actualizar' : '/ordenes/guardar'}" method="post">
+                            <input type="hidden" name="codigoOT" th:if="${otEdit != null}" th:value="${otEdit.codigoOT}">
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Nombre del Cliente *</label>
+                                <input type="text" name="cliente" class="form-control form-control-sm" th:value="${otEdit != null ? otEdit.cliente : ''}" placeholder="Ej. Giancarlo Rivas" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Teléfono de Contacto *</label>
+                                <input type="tel" name="telefono" class="form-control form-control-sm" th:value="${otEdit != null ? otEdit.telefono : ''}" placeholder="Ej. 987654321" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Formato del Material *</label>
+                                <select name="formato" class="form-select form-select-sm" required>
+                                    <option value="">Seleccione formato...</option>
+                                    <option th:each="t : ${tarifas}"
+                                            th:value="${t.formato}"
+                                            th:text="${t.formato + ' (' + t.categoria + ' - S/ ' + t.precioBase + ')'}"
+                                            th:selected="${otEdit != null ? t.formato == otEdit.formato : false}">
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Cantidad o Horas Estimadas *</label>
+                                <input type="number" name="cantidad" class="form-control form-control-sm" min="1" th:value="${otEdit != null ? otEdit.cantidad : 1}" required>
+                            </div>
+
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" name="mantenimiento" class="form-check-input" id="chkMantenimientoOT" th:checked="${otEdit != null ? otEdit.mantenimiento : false}">
+                                <label class="form-check-label small" for="chkMantenimientoOT">Requiere Mantenimiento (+ S/ 15.00)</label>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Estado Inicial:</label>
+                                <div th:if="${otEdit == null}">
+                                    <input type="text" class="form-control form-control-sm bg-light fw-bold text-warning" value="En Recepción" readonly>
+                                    <input type="hidden" name="estado" value="En Recepción">
+                                </div>
+                                <select th:if="${otEdit != null}" name="estado" class="form-select form-select-sm">
+                                    <option value="En Recepción" th:selected="${otEdit.estado == 'En Recepción'}">En Recepción</option>
+                                    <option value="Por Notificar" th:selected="${otEdit.estado == 'Por Notificar'}">Por Notificar</option>
+                                    <option value="Finalizado" th:selected="${otEdit.estado == 'Finalizado'}">Finalizado</option>
+                                    <option value="Cancelado" th:selected="${otEdit.estado == 'Cancelado'}">Cancelado</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn btn-success w-100 fw-bold" th:text="${otEdit != null ? 'Actualizar Orden' : 'Guardar Orden'}">Guardar Orden</button>
+                            <a th:if="${otEdit != null}" th:href="@{/ordenes}" class="btn btn-secondary w-100 mt-2 btn-sm">Cancelar</a>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLA DE LISTADO -->
+            <div class="col-lg-8 col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-table me-2"></i>Órdenes Registradas</span>
+                        <span class="badge bg-secondary" th:text="${totalRegistros} + ' registros'"></span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover align-middle mb-0 text-center">
+                                <thead class="table-dark small">
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Fecha Ingreso</th> <!-- NUEVO ENCABEZADO -->
+                                        <th>Cliente</th>
+                                        <th>Formato</th>
+                                        <th>Cant.</th>
+                                        <th>Mant.</th>
+                                        <th>Monto</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="o : ${ordenes}">
+                                        <td class="fw-bold text-primary" th:text="${o.codigoOT}"></td>
+                                        <!-- MOSTRAR FECHA FORMATEADA -->
+                                        <td class="small text-muted" th:text="${#temporals.format(o.fechaRegistro, 'dd/MM/yyyy HH:mm')}"></td>
+                                        <td class="text-start" th:text="${o.cliente}"></td>
+                                        <td><span class="badge bg-light text-dark border" th:text="${o.formato}"></span></td>
+                                        <td th:text="${o.cantidad}"></td>
+                                        <td>
+                                            <span th:if="${o.mantenimiento}" class="badge bg-warning text-dark"><i class="bi bi-check-lg"></i> Sí</span>
+                                            <span th:unless="${o.mantenimiento}" class="badge bg-light text-secondary border">No</span>
+                                        </td>
+                                        <td class="fw-bold text-success" th:text="'S/ ' + ${#numbers.formatDecimal(o.montoEstimado, 1, 'COMMA', 2, 'POINT')}"></td>
+                                        <td>
+                                            <span th:if="${o.estado == 'En Recepción'}" class="badge bg-warning text-dark">En Recepción</span>
+                                            <span th:if="${o.estado == 'Por Notificar'}" class="badge bg-info text-dark">Por Notificar</span>
+                                            <span th:if="${o.estado == 'Finalizado'}" class="badge bg-success">Finalizado</span>
+                                            <span th:if="${o.estado == 'Cancelado'}" class="badge bg-danger">Cancelado</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a th:if="${o.isEditable()}" th:href="@{/ordenes(codEditar=${o.codigoOT})}" class="btn btn-warning" title="Modificar"><i class="bi bi-pencil-square"></i></a>
+                                                <button th:unless="${o.isEditable()}" class="btn btn-secondary" disabled title="Bloqueado por el laboratorio"><i class="bi bi-lock-fill"></i></button>
+                                                <a th:if="${o.estado == 'Por Notificar'}" th:href="@{/ordenes/liquidar/{id}(id=${o.codigoOT})}" class="btn btn-success" onclick="return confirm('¿Confirmar cobro y entrega?');" title="Cobrar y Entregar"><i class="bi bi-check2-circle"></i></a>
+                                                <a th:if="${o.estado != 'Cancelado' and o.estado != 'Finalizado'}" th:href="@{/ordenes/cancelar/{id}(id=${o.codigoOT})}" class="btn btn-outline-danger" onclick="return confirm('¿Marcar como Cancelada?');" title="Cancelar"><i class="bi bi-x-circle"></i></a>
+                                                <a th:href="@{/ordenes/eliminar/{id}(id=${o.codigoOT})}" class="btn btn-danger" onclick="return confirm('¿Eliminar de memoria?');" title="Eliminar"><i class="bi bi-trash"></i></a>
+
+                                                <!-- BOTÓN IMPRIMIR BOLETA PDF (SOLO SI ESTÁ FINALIZADO) -->
+                                                <a th:if="${o.estado == 'Finalizado'}"
+                                                   th:href="@{/ordenes/pdf/{id}(id=${o.codigoOT})}"
+                                                   target="_blank"
+                                                   class="btn btn-primary"
+                                                   title="Ver Boleta de Venta PDF">
+                                                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${ordenes.isEmpty()}">
+                                        <td colspan="9" class="text-muted py-4"><i class="bi bi-inbox fs-3 d-block mb-1"></i>No se encontraron órdenes.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light d-flex justify-content-between align-items-center">
+                        <small class="text-muted">Mostrando: <strong th:text="${totalRegistros}"></strong> OTs</small>
+                        <h6 class="mb-0 text-dark">Total Filtrado: <span class="text-success fw-bold fs-5" th:text="'S/ ' + ${#numbers.formatDecimal(totalGeneral, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</span></h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

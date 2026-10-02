@@ -1,0 +1,128 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:fragment="head(pageTitle)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle != null ? pageTitle + ' - MultiMedia Digital' : 'MultiMedia Digital'}">MultiMedia
+        Digital</title>
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <header th:fragment="header">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm mb-4">
+            <div class="container">
+                <a class="navbar-brand fw-bold text-warning" th:href="@{/}">
+                    <i class="bi bi-disc-fill text-warning me-2"></i>MultiMedia Digital
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="menuPrincipal">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/}"><i class="bi bi-house-door me-1"></i>Inicio</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/servicios}"><i class="bi bi-tags me-1"></i>Catálogo y
+                                Precios</a>
+                        </li>
+                        <!-- PÚBLICO: FORMULARIO DE CONTACTO -->
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/contacto}"><i class="bi bi-envelope me-1"></i>Contacto</a>
+                        </li>
+
+                        <!-- ENLACE EJECUTIVO & ADMIN: BANDEJA DE CONSULTAS RECIBIDAS -->
+                        <li class="nav-item"
+                            th:if="${session.usuario != null and (session.usuario.rol == 'Ejecutivo' or session.usuario.rol == 'Admin')}">
+                            <a class="nav-link text-warning fw-semibold" th:href="@{/consultas}">
+                                <i class="bi bi-inbox-fill me-1"></i>Bandeja Consultas
+                            </a>
+                        </li>
+
+                        <!-- ENLACE EJECUTIVO & ADMIN: GESTIÓN DE OTS (COLOR VERDE DESTACADO) -->
+                        <li class="nav-item"
+                            th:if="${session.usuario != null and (session.usuario.rol == 'Ejecutivo' or session.usuario.rol == 'Admin')}">
+                            <a class="nav-link text-success fw-semibold" th:href="@{/ordenes}">
+                                <i class="bi bi-folder-check me-1"></i>Gestión de OTs
+                            </a>
+                        </li>
+
+                        <!-- ENLACE TÉCNICO & ADMIN: PANEL TÉCNICO -->
+                        <li class="nav-item"
+                            th:if="${session.usuario != null and (session.usuario.rol == 'Técnico' or session.usuario.rol == 'Admin')}">
+                            <a class="nav-link text-info fw-semibold" th:href="@{/tecnico}">
+                                <i class="bi bi-tools me-1"></i>Panel Técnico
+                            </a>
+                        </li>
+
+                        <!-- ENLACE ADMIN: PANEL GERENCIAL -->
+                        <li class="nav-item" th:if="${session.usuario != null and session.usuario.rol == 'Admin'}">
+                            <a class="nav-link text-danger fw-bold" th:href="@{/admin}">
+                                <i class="bi bi-shield-lock me-1"></i>Admin Gerencial
+                            </a>
+                        </li>
+
+                        <!-- DROPDOWN REPORTES: SOLO ADMIN -->
+                        <li class="nav-item dropdown"
+                            th:if="${session.usuario != null and session.usuario.rol == 'Admin'}">
+                            <a class="nav-link dropdown-toggle text-light" href="#" id="menuReportes" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-bar-chart-line me-1"></i>Reportes
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark shadow">
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/dashboard/ingresos}">
+                                        <i class="bi bi-graph-up me-2 text-warning"></i>Ingresos por Formato (Barra /
+                                        Lineal)
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/dashboard/distribucion}">
+                                        <i class="bi bi-pie-chart me-2 text-info"></i>Distribución de OTs (Círculos /
+                                        Torta)
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <!-- SECCIÓN DERECHA: ESTADO DE SESIÓN -->
+                    <div class="d-flex align-items-center gap-2">
+                        <!-- SI NO HA INICIADO SESIÓN -->
+                        <div th:if="${session.usuario == null}">
+                            <a th:href="@{/login}" class="btn btn-outline-light btn-sm">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar Sesión
+                            </a>
+                        </div>
+
+                        <!-- SI HA INICIADO SESIÓN -->
+                        <div th:if="${session.usuario != null}" class="d-flex align-items-center gap-2">
+                            <span class="badge bg-secondary px-2 py-1">
+                                <i class="bi bi-person-circle me-1"></i>
+                                <span th:text="${session.usuario.nombre}">Usuario</span>
+                            </span>
+                            <span th:if="${session.usuario.rol == 'Ejecutivo'}"
+                                class="badge bg-warning text-dark">Ejecutivo</span>
+                            <span th:if="${session.usuario.rol == 'Técnico'}"
+                                class="badge bg-info text-dark">Técnico</span>
+                            <span th:if="${session.usuario.rol == 'Admin'}" class="badge bg-danger">Admin</span>
+
+                            <a th:href="@{/logout}" class="btn btn-outline-danger btn-sm" title="Cerrar sesión">
+                                <i class="bi bi-box-arrow-right"></i> Salir
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+</body>
+
+</html>

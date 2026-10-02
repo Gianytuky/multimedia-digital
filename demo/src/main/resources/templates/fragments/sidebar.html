@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="sidebar" class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark shadow-lg" style="width: 260px; min-height: 100vh;">
+    <!-- Marca del Sistema Operativo -->
+    <a th:href="@{/}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none px-2">
+        <i class="bi bi-disc-fill text-warning fs-3 me-2"></i>
+        <span class="fs-5 fw-bold">MultiMedia Digital</span>
+    </a>
+    <hr class="border-secondary my-3">
+
+    <!-- Tarjeta del Usuario en Sesión -->
+    <div class="p-2 bg-secondary bg-opacity-25 rounded-3 mb-3 border border-secondary" th:if="${session.usuario != null}">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-person-circle fs-2 me-2 text-warning"></i>
+            <div class="overflow-hidden">
+                <h6 class="mb-0 text-white text-truncate" th:text="${session.usuario.nombre}">Usuario</h6>
+                <small class="badge bg-warning text-dark mt-1" th:if="${session.usuario.rol == 'Ejecutivo'}">Ejecutivo</small>
+                <small class="badge bg-info text-dark mt-1" th:if="${session.usuario.rol == 'Técnico'}">Técnico</small>
+                <small class="badge bg-danger mt-1" th:if="${session.usuario.rol == 'Admin'}">Admin Gerencial</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menú de Navegación por Rol -->
+    <ul class="nav nav-pills flex-column mb-auto gap-1">
+        
+        <!-- ENLACES DE EJECUTIVO Y ADMIN -->
+        <li th:if="${session.usuario != null and (session.usuario.rol == 'Ejecutivo' or session.usuario.rol == 'Admin')}">
+            <a th:href="@{/ordenes}" class="nav-link text-white" th:classappend="${#httpServletRequest != null and #httpServletRequest.requestURI == '/ordenes' ? 'active bg-primary fw-bold' : ''}">
+                <i class="bi bi-folder-check me-2 text-success"></i>Gestión de OTs
+            </a>
+        </li>
+        <li th:if="${session.usuario != null and (session.usuario.rol == 'Ejecutivo' or session.usuario.rol == 'Admin')}">
+            <a th:href="@{/consultas}" class="nav-link text-white" th:classappend="${#httpServletRequest != null and #httpServletRequest.requestURI == '/consultas' ? 'active bg-primary fw-bold' : ''}">
+                <i class="bi bi-inbox-fill me-2 text-warning"></i>Bandeja Consultas
+            </a>
+        </li>
+
+        <!-- ENLACES DE TÉCNICO Y ADMIN -->
+        <li th:if="${session.usuario != null and (session.usuario.rol == 'Técnico' or session.usuario.rol == 'Admin')}">
+            <a th:href="@{/tecnico}" class="nav-link text-white" th:classappend="${#httpServletRequest != null and #httpServletRequest.requestURI == '/tecnico' ? 'active bg-primary fw-bold' : ''}">
+                <i class="bi bi-tools me-2 text-info"></i>Panel Técnico
+            </a>
+        </li>
+
+        <!-- ENLACES DE ADMINISTRADOR -->
+        <li th:if="${session.usuario != null and session.usuario.rol == 'Admin'}">
+            <a th:href="@{/admin}" class="nav-link text-white" th:classappend="${#httpServletRequest != null and #httpServletRequest.requestURI == '/admin' ? 'active bg-primary fw-bold' : ''}">
+                <i class="bi bi-shield-lock me-2 text-danger"></i>Dashboard General
+            </a>
+        </li>
+        <li th:if="${session.usuario != null and session.usuario.rol == 'Admin'}">
+            <a th:href="@{/dashboard/ingresos}" class="nav-link text-white" th:classappend="${#httpServletRequest != null and #httpServletRequest.requestURI == '/dashboard/ingresos' ? 'active bg-primary fw-bold' : ''}">
+                <i class="bi bi-graph-up me-2 text-warning"></i>Reporte Ingresos
+            </a>
+        </li>
+        <li th:if="${session.usuario != null and session.usuario.rol == 'Admin'}">
+            <a th:href="@{/dashboard/distribucion}" class="nav-link text-white" th:classappend="${#httpServletRequest != null and #httpServletRequest.requestURI == '/dashboard/distribucion' ? 'active bg-primary fw-bold' : ''}">
+                <i class="bi bi-pie-chart me-2 text-info"></i>Distribución OTs
+            </a>
+        </li>
+    </ul>
+
+    <hr class="border-secondary my-3">
+    
+    <!-- Pie del Sidebar: Accesos Directos -->
+    <div class="d-flex flex-column gap-2">
+        <a th:href="@{/}" class="btn btn-outline-light btn-sm text-start">
+            <i class="bi bi-globe me-2"></i>Ver Web Pública
+        </a>
+        <a th:href="@{/logout}" class="btn btn-outline-danger btn-sm text-start">
+            <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+        </a>
+    </div>
+</div>
+
+</body>
+</html>

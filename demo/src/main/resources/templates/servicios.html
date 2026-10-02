@@ -1,0 +1,334 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<head th:replace="~{fragments/header :: head('Catálogo y Precios')}"></head>
+
+<body class="d-flex flex-column min-vh-100 bg-light">
+
+    <!-- NAVBAR COMÚN -->
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <main class="container my-4 flex-grow-1">
+        <div class="text-center mb-4">
+            <h2 class="fw-bold text-dark"><i class="bi bi-calculator text-primary me-2"></i>Catálogo Oficial y Cotizador
+                de Servicios</h2>
+            <p class="text-muted">Simula tu presupuesto agregando múltiples formatos y cantidades a la cotización
+                provisoria.</p>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <!-- FORMULARIO DE COTIZACIÓN (COLUMNA IZQUIERDA) -->
+            <div class="col-lg-5 col-12">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        <i class="bi bi-gear-fill me-2"></i>Calcular Presupuesto Estimado
+                    </div>
+                    <div class="card-body p-4">
+                        <form id="formCotizador">
+
+                            <!-- Selección de Categoría -->
+                            <div class="mb-3">
+                                <label for="cbCategoria" class="form-label fw-bold small">Categoría del Material
+                                    *</label>
+                                <select id="cbCategoria" class="form-select" onchange="filtrarFormatosPorCategoria()">
+                                    <option value="">-- Seleccione Categoría --</option>
+                                    <option value="Video">Video (Cobro por Hora o Fracción)</option>
+                                    <option value="Audio">Audio (Cobro por Unidad)</option>
+                                    <option value="Imagen">Imágenes / Fotografía (Cobro por Unidad)</option>
+                                </select>
+                            </div>
+
+                            <!-- Selección de Formato Específico (Cargado dinámicamente) -->
+                            <div class="mb-3">
+                                <label for="comboFormato" class="form-label fw-bold small">Formato del Medio *</label>
+                                <select id="comboFormato" class="form-select" onchange="actualizarVistaPreviaFormato()"
+                                    disabled required>
+                                    <option value="">Primero elija una categoría...</option>
+                                    <option th:each="t : ${tarifas}" th:value="${t.formato}"
+                                        th:text="${t.formato + ' - S/ ' + t.precioBase + ' (' + t.unidadCobro + ')'}"
+                                        th:attr="data-precio=${t.precioBase},data-imagen=${t.imagen},data-categoria=${t.categoria},data-unidad=${t.unidadCobro}">
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- VISTA PREVIA DINÁMICA DE LA FOTO DEL FORMATO -->
+                            <div class="text-center my-3 p-3 border rounded bg-white shadow-sm d-none" id="boxPreview">
+                                <label class="form-label small text-muted d-block fw-semibold mb-2">Identificador Visual
+                                    del Formato:</label>
+                                <img id="imgPreview" th:src="@{/assets/banner.jpg}" class="img-fluid rounded border"
+                                    style="max-height: 150px; object-fit: contain;" alt="Vista previa del medio">
+                            </div>
+
+                            <!-- Cantidad o Horas Estimadas -->
+                            <div class="mb-3">
+                                <label id="lblCantidad" for="numCantidad" class="form-label small fw-bold">Cantidad de
+                                    Unidades / Horas *</label>
+                                <input type="number" id="numCantidad" class="form-control" value="1" min="1" required>
+                            </div>
+
+                            <!-- Mantenimiento Opcional -->
+                            <div class="mb-3 form-check" id="boxMantenimiento">
+                                <input type="checkbox" class="form-check-input" id="chkMantenimiento">
+                                <label class="form-check-label small" for="chkMantenimiento">
+                                    ¿Requiere Limpieza / Mantenimiento de Cinta? (+ S/ 15.00 por unidad/cinta)
+                                </label>
+                            </div>
+
+                            <button type="button" onclick="agregarItemCotizacion()"
+                                class="btn btn-warning w-100 fw-bold shadow-sm">
+                                <i class="bi bi-plus-circle me-1"></i> Agregar a la Cotización
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLA DE DETALLE DE LA COTIZACIÓN PROVISORIA (COLUMNA DERECHA CON COLUMNA CATEGORÍA) -->
+            <div class="col-lg-7 col-12">
+                <div class="card shadow-sm border-0 h-100">
+                    <div
+                        class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-receipt me-2"></i>Detalle de la Cotización Provisoria</span>
+                        <span class="badge bg-secondary" id="lblCantItems">0 ítems</span>
+                    </div>
+                    <div class="card-body p-0 d-flex flex-column justify-content-between">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mb-0 align-middle text-center">
+                                <thead class="table-dark small">
+                                    <tr>
+                                        <th class="text-start ps-3">Formato</th>
+                                        <th>Categoría</th>
+                                        <th>Cant./Hrs</th>
+                                        <th>Mantenimiento</th>
+                                        <th>Subtotal</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaCotizacion">
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-5">
+                                            <i class="bi bi-cart-x fs-2 d-block mb-2 text-secondary"></i>
+                                            No hay ítems agregados a la cotización provisoria.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="p-3 bg-light border-top">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold text-dark fs-5">Total Estimado Acumulado:</span>
+                                <span id="lblTotalEstimado" class="fw-bold text-success fs-3">S/ 0.00</span>
+                            </div>
+                            <small class="text-muted d-block">
+                                <i class="bi bi-info-circle me-1"></i>* Nota: Para cintas de video, la duración real
+                                capturada en laboratorio definirá la liquidación exacta final al cerrar la Orden de
+                                Trabajo (OT)[cite: 28].
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN GUÍA VISUAL Y TARIFARIO OFICIAL DE FORMATOS -->
+        <hr class="my-5">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold text-dark"><i class="bi bi-images text-warning me-2"></i>Catálogo e Identificación de
+                Formatos</h3>
+            <p class="text-muted">Revisa nuestra guía visual para identificar el tipo de soporte analógico que tienes en
+                casa o en archivo.</p>
+        </div>
+
+        <!-- GALERÍA TARIFARIO CON BADGES DE COLORES DIFERENCIADOS POR CATEGORÍA -->
+        <div class="row g-3 mb-5">
+            <div class="col-6 col-md-3 col-lg-2" th:each="t : ${tarifas}">
+                <div class="card text-center h-100 shadow-sm border-0 rounded-3">
+                    <img th:src="@{'/assets/' + ${t.imagen}}" class="card-img-top p-2"
+                        style="height: 110px; object-fit: contain;" th:alt="${t.formato}">
+                    <div class="card-body p-2 d-flex flex-column justify-content-between">
+                        <h6 class="card-title fw-bold mb-1 small" th:text="${t.formato}"></h6>
+                        <div>
+                            <!-- BADGES CON COLORES ESPECÍFICOS SEGÚN CATEGORÍA -->
+                            <span th:if="${t.categoria == 'Video'}" class="badge bg-primary mb-1">Video</span>
+                            <span th:if="${t.categoria == 'Audio'}" class="badge bg-success mb-1">Audio</span>
+                            <span th:if="${t.categoria == 'Imagen'}"
+                                class="badge bg-warning text-dark mb-1">Imagen</span>
+
+                            <div class="fw-bold text-success small"
+                                th:text="'S/ ' + ${#numbers.formatDecimal(t.precioBase, 1, 'COMMA', 2, 'POINT')}"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- SCRIPT JS DE COTIZACIÓN DINÁMICA CON CATEGORÍA Y COLORES -->
+    <script>
+        let listaCotizacion = [];
+        let opcionesOriginales = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const combo = document.getElementById("comboFormato");
+            for (let i = 0; i < combo.options.length; i++) {
+                opcionesOriginales.push(combo.options[i].cloneNode(true));
+            }
+        });
+
+        function filtrarFormatosPorCategoria() {
+            const catSel = document.getElementById("cbCategoria").value;
+            const combo = document.getElementById("comboFormato");
+            const boxPreview = document.getElementById("boxPreview");
+            const lblCantidad = document.getElementById("lblCantidad");
+            const boxMantenimiento = document.getElementById("boxMantenimiento");
+
+            combo.innerHTML = '<option value="">-- Seleccione Formato --</option>';
+            boxPreview.classList.add("d-none");
+
+            if (!catSel) {
+                combo.disabled = true;
+                return;
+            }
+
+            combo.disabled = false;
+            opcionesOriginales.forEach(opt => {
+                const catOpt = opt.getAttribute("data-categoria");
+                if (catOpt && catOpt.toLowerCase() === catSel.toLowerCase()) {
+                    combo.appendChild(opt.cloneNode(true));
+                }
+            });
+
+            if (catSel.toLowerCase() === "video") {
+                lblCantidad.innerText = "Estimado de Horas *";
+                boxMantenimiento.style.display = "block";
+            } else {
+                lblCantidad.innerText = "Cantidad de Unidades *";
+                if (catSel.toLowerCase() === "imagen") {
+                    boxMantenimiento.style.display = "none";
+                    document.getElementById("chkMantenimiento").checked = false;
+                } else {
+                    boxMantenimiento.style.display = "block";
+                }
+            }
+        }
+
+        function actualizarVistaPreviaFormato() {
+            const combo = document.getElementById("comboFormato");
+            const selectedOption = combo.options[combo.selectedIndex];
+            const boxPreview = document.getElementById("boxPreview");
+            const imgPreview = document.getElementById("imgPreview");
+
+            if (combo.value && selectedOption.getAttribute("data-imagen")) {
+                const imagen = selectedOption.getAttribute("data-imagen");
+                imgPreview.src = "/assets/" + imagen;
+                boxPreview.classList.remove("d-none");
+            } else {
+                boxPreview.classList.add("d-none");
+            }
+        }
+
+        function agregarItemCotizacion() {
+            const combo = document.getElementById("comboFormato");
+            const selectedOption = combo.options[combo.selectedIndex];
+
+            if (!combo.value) {
+                alert("Por favor seleccione un formato válido.");
+                return;
+            }
+
+            const formatoNombre = combo.value;
+            const categoria = selectedOption.getAttribute("data-categoria") || "General";
+            const precioBase = parseFloat(selectedOption.getAttribute("data-precio")) || 0;
+            const cantidad = parseInt(document.getElementById("numCantidad").value) || 0;
+            const requiereMant = document.getElementById("chkMantenimiento").checked;
+            const unidad = selectedOption.getAttribute("data-unidad") || "Unidad";
+
+            if (cantidad <= 0) {
+                alert("Por favor ingrese una cantidad mayor a cero.");
+                return;
+            }
+
+            const recargoMant = requiereMant ? 15.00 : 0.00;
+            const subtotal = (precioBase * cantidad) + recargoMant;
+
+            const nuevoItem = {
+                formato: formatoNombre,
+                categoria: categoria,
+                cantidad: cantidad,
+                unidad: unidad,
+                // Muestra únicamente "Sí" o "No"
+                mantenimiento: requiereMant ? "Sí" : "No",
+                subtotal: subtotal
+            };
+
+            listaCotizacion.push(nuevoItem);
+            renderizarTablaCotizacion();
+        }
+
+        function renderizarTablaCotizacion() {
+            const cuerpo = document.getElementById("cuerpoTablaCotizacion");
+            const lblTotal = document.getElementById("lblTotalEstimado");
+            const lblCant = document.getElementById("lblCantItems");
+
+            lblCant.innerText = listaCotizacion.length + " ítems";
+
+            if (listaCotizacion.length === 0) {
+                cuerpo.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-5">
+                            <i class="bi bi-cart-x fs-2 d-block mb-2 text-secondary"></i>
+                            No hay ítems agregados a la cotización provisoria.
+                        </td>
+                    </tr>`;
+                lblTotal.innerText = "S/ 0.00";
+                return;
+            }
+
+            cuerpo.innerHTML = "";
+            let totalGeneral = 0;
+
+            listaCotizacion.forEach((item, index) => {
+                totalGeneral += item.subtotal;
+
+                // Determinar la insignia con color según la categoría
+                let badgeCategoria = `<span class="badge bg-secondary">${item.categoria}</span>`;
+                if (item.categoria.toLowerCase() === 'video') {
+                    badgeCategoria = `<span class="badge bg-primary">Video</span>`;
+                } else if (item.categoria.toLowerCase() === 'audio') {
+                    badgeCategoria = `<span class="badge bg-success">Audio</span>`;
+                } else if (item.categoria.toLowerCase() === 'imagen') {
+                    badgeCategoria = `<span class="badge bg-warning text-dark">Imagen</span>`;
+                }
+
+                const fila = document.createElement("tr");
+                fila.innerHTML = `
+                    <td class="text-start ps-3 fw-bold">${item.formato}</td>
+                    <td>${badgeCategoria}</td>
+                    <td>${item.cantidad} <small class="text-muted">(${item.unidad})</small></td>
+                    <td><span class="badge ${item.mantenimiento === 'Sí' ? 'bg-warning text-dark' : 'bg-secondary'}">${item.mantenimiento}</span></td>
+                    <td class="fw-bold text-success">S/ ${item.subtotal.toFixed(2)}</td>
+                    <td>
+                        <button onclick="eliminarItemCotizacion(${index})" class="btn btn-outline-danger btn-sm" title="Quitar ítem">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                cuerpo.appendChild(fila);
+            });
+
+            lblTotal.innerText = "S/ " + totalGeneral.toFixed(2);
+        }
+
+        function eliminarItemCotizacion(index) {
+            listaCotizacion.splice(index, 1);
+            renderizarTablaCotizacion();
+        }
+    </script>
+
+    <!-- FOOTER COMÚN -->
+    <div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+
+</html>
